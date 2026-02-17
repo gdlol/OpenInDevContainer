@@ -1,0 +1,4 @@
+lockfile=false
+resolution-mode=time-based
+store-dir=/home/dev/.local/share/pnpm/store
+global-bin-dir=/home/dev/.local/bin

@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cake": "dotnet run --project Automation --target",
+    "format": "pnpm run cake Format",
+    "lint": "pnpm run cake Lint",
+    "restore": "pnpm run cake Restore"
+  },
+  "dependencies": {
+    "@prettier/plugin-xml": "^3.4.2",
+    "cspell": "^9.6.4",
+    "prettier": "^3.8.1",
+    "prettier-plugin-ini": "^1.3.0",
+    "prettier-plugin-packagejson": "^3.0.0",
+    "prettier-plugin-sh": "^0.18.0"
+  }
+}

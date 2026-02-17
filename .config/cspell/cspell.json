@@ -1,0 +1,8 @@
+{
+  "version": "0.2",
+  "enableGlobDot": true,
+  "useGitignore": true,
+  "gitignoreRoot": ".",
+  "ignorePaths": ["LICENSE"],
+  "words": ["devcontainer", "devcontainers", "packagejson", "csharpierignore", "csharpierrc", "globalconfig", "msbuild"]
+}
