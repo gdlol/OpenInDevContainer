@@ -1,23 +1,46 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-static async Task<string> GetWslPath(string path)
+static async Task<string> Run(
+    string fileName,
+    IEnumerable<string> arguments,
+    bool shell = false,
+    bool captureOutput = false
+)
 {
-    using var process = new Process
+    var startInfo = new ProcessStartInfo
     {
-        StartInfo = new ProcessStartInfo
-        {
-            FileName = "wslpath",
-            ArgumentList = { "-w", path },
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        },
+        FileName = fileName,
+        RedirectStandardOutput = captureOutput,
+        UseShellExecute = shell,
+        CreateNoWindow = true,
     };
+    foreach (var arg in arguments)
+    {
+        startInfo.ArgumentList.Add(arg);
+    }
+    using var process = new Process { StartInfo = startInfo };
     process.Start();
-    string wslPath = await process.StandardOutput.ReadToEndAsync();
+    string output = string.Empty;
+    if (captureOutput)
+    {
+        output = await process.StandardOutput.ReadToEndAsync();
+    }
     await process.WaitForExitAsync();
+    return output;
+}
+
+static async Task<string> TryConvertWslPath(string path)
+{
+    string wslpathPath = "/usr/bin/wslpath";
+    if (!File.Exists(wslpathPath))
+    {
+        return path;
+    }
+
+    string wslPath = await Run(wslpathPath, ["-w", path], captureOutput: true);
     return wslPath.Trim();
 }
 
@@ -40,23 +63,15 @@ static async Task GetCommand(string path, string workspaceName)
     string hexPath = GetHexPath(path);
     string folderUri = $"vscode-remote://dev-container+{hexPath}/workspaces/{workspaceName}";
     Console.WriteLine($"Folder URI: {folderUri}");
-    using var process = new Process
-    {
-        StartInfo = new ProcessStartInfo
-        {
-            FileName = "code",
-            ArgumentList = { "--folder-uri", folderUri },
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        },
-    };
-    process.Start();
-    await process.WaitForExitAsync();
+    await Run("code", ["--folder-uri", folderUri]);
 }
 
 string currentPath = Directory.GetCurrentDirectory();
 string workspaceName = new DirectoryInfo(currentPath).Name;
-currentPath = await GetWslPath(currentPath);
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+{
+    currentPath = await TryConvertWslPath(currentPath);
+}
 workspaceName = ToKebabCase(workspaceName);
 
 await GetCommand(currentPath, workspaceName);
