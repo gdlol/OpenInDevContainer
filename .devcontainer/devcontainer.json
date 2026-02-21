@@ -3,15 +3,20 @@
   "name": "open-in-devcontainer",
   "dockerComposeFile": "compose.yaml",
   "service": "devcontainer",
+  "containerUser": "dev",
   "remoteUser": "dev",
   "overrideCommand": true,
   "workspaceFolder": "/workspaces/open-in-devcontainer",
   "features": {
-    "ghcr.io/devcontainer-config/features/user-init:2": {},
-    "ghcr.io/devcontainer-config/features/dot-config:3": {},
+    "ghcr.io/devcontainer-config/features/user-init:3": {},
+    "ghcr.io/devcontainer-config/features/dot-config:4": {},
     "ghcr.io/devcontainers/features/dotnet:2": { "version": "10.0" },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
+  "mounts": [
+    { "type": "bind", "source": "${localWorkspaceFolder}", "target": "/workspaces/open-in-devcontainer" },
+    { "type": "volume", "source": "WORKSPACES", "target": "/workspaces" }
+  ],
   "customizations": {
     "vscode": {
       "extensions": [

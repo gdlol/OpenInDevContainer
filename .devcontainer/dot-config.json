@@ -1,6 +1,6 @@
 {
-  "git": { "attributes": "/home/dev/.config/git/attributes", "ignore": "/home/dev/.config/git/ignore" },
-  "pnpm": { "rc": "/home/dev/.config/pnpm/rc" },
+  "git": { "attributes": "/etc/devcontainer-config/git/attributes", "ignore": "/etc/devcontainer-config/git/ignore" },
+  "pnpm": { "rc": "/etc/devcontainer-config/pnpm/rc" },
   "prettier": { ".prettierrc.json": ".prettierrc.json" },
   "cspell": { "cspell.json": "cspell.json" },
   "workspaces": {
