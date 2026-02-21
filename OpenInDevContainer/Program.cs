@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.CommandLine;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -53,28 +54,34 @@ static string ToKebabCase(string name)
     return name.ToLowerInvariant();
 }
 
-static string GetHexPath(string path)
-{
-    return Convert.ToHexStringLower(Encoding.UTF8.GetBytes(path));
-}
-
 static async Task GetCommand(string path, string workspaceName)
 {
-    string hexPath = GetHexPath(path);
+    string hexPath = Convert.ToHexStringLower(Encoding.UTF8.GetBytes(path));
     string folderUri = $"vscode-remote://dev-container+{hexPath}/workspaces/{workspaceName}";
     Console.WriteLine($"Folder URI: {folderUri}");
     await Run("code", ["--folder-uri", folderUri]);
 }
 
-string currentPath = Directory.GetCurrentDirectory();
-string workspaceName = new DirectoryInfo(currentPath).Name;
-if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+var rootCommand = new RootCommand("Open in Dev Container")
 {
-    currentPath = await TryConvertWslPath(currentPath);
-}
-workspaceName = ToKebabCase(workspaceName);
+    Arguments = { Arguments.Workspace },
+    CommandAction = async (parseResult, token) =>
+    {
+        var workspace = parseResult.GetRequiredValue(Arguments.Workspace);
 
-await GetCommand(currentPath, workspaceName);
+        string workspacePath = workspace.FullName;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            workspacePath = await TryConvertWslPath(workspacePath);
+        }
+
+        string workspaceName = workspace.Name;
+        workspaceName = ToKebabCase(workspaceName);
+
+        await GetCommand(workspacePath, workspaceName);
+    },
+};
+await rootCommand.Parse(args).InvokeAsync();
 
 internal partial class KebabCaseBoundary
 {

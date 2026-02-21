@@ -17,4 +17,8 @@
   <ItemGroup>
     <None Include="$(ReadMePath)" Condition="$(ReadMePath) != ''" Pack="true" PackagePath="/" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
 </Project>

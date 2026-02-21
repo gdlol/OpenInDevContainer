@@ -2,6 +2,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "pnpm run cake Build",
     "cake": "dotnet run --project Automation --target",
     "format": "pnpm run cake Format",
     "lint": "pnpm run cake Lint",
