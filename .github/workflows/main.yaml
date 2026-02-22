@@ -1,0 +1,45 @@
+name: "Main"
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REPOSITORY_NAME: open-in-devcontainer
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (GitHub)
+        uses: actions/checkout@v6
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Pre-build dev container image
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
+          cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
+          push: always
+          runCmd: pnpm restore
+
+      - name: Lint
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
+          runCmd: pnpm lint
+
+      - name: Build
+        uses: devcontainers/ci@v0.3
+        with:
+          cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
+          runCmd: pnpm build

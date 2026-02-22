@@ -1,0 +1,99 @@
+name: "Publish"
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DEVCONTAINER_IMAGE: ghcr.io/${{ github.repository_owner }}/open-in-devcontainer/devcontainer
+  AUTHORS: ${{ github.repository_owner }}
+
+jobs:
+  pack-common:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Pack common
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ${{ env.DEVCONTAINER_IMAGE }}
+          cacheFrom: ${{ env.DEVCONTAINER_IMAGE }}
+          push: never
+          runCmd: pnpm run pack
+          env: |
+            AUTHORS
+
+      - name: Upload common packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-common
+          path: .local/Packages/*.nupkg
+
+  pack-rid:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            rid: linux-x64
+          - runner: ubuntu-24.04-arm
+            rid: linux-arm64
+          - runner: macos-15-intel
+            rid: osx-x64
+          - runner: macos-latest
+            rid: osx-arm64
+          - runner: windows-latest
+            rid: win-x64
+          - runner: windows-11-arm
+            rid: win-arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10
+
+      - name: Pack RID
+        run: dotnet run --project Automation --target PackRid
+
+      - name: Upload RID packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-rid-${{ matrix.rid }}
+          path: .local/Packages/*.nupkg
+
+  publish:
+    needs: [pack-common, pack-rid]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download all packages
+        uses: actions/download-artifact@v7
+        with:
+          path: .local/Packages
+          pattern: packages-*
+          merge-multiple: true
+
+      - name: Push packages
+        uses: devcontainers/ci@v0.3
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        with:
+          cacheFrom: ${{ env.DEVCONTAINER_IMAGE }}
+          runCmd: pnpm run publish
