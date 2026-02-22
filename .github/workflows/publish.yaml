@@ -107,7 +107,7 @@ jobs:
       - name: Push packages and images
         uses: devcontainers/ci@v0.3
         env:
-          # NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
           CR_PAT: ${{ secrets.CR_PAT }}
         with:
           cacheFrom: ${{ env.DEVCONTAINER_IMAGE }}
