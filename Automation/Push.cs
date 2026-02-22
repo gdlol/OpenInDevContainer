@@ -38,6 +38,6 @@ public class PushTag : FrostingTask<Context>
         string[] tags = [.. repo.Tags.Select(t => t.FriendlyName)];
         string tag = tags.OrderByDescending(SemanticVersion.Parse).First();
         using var remote = repo.Network.Remotes.First();
-        repo.Network.Push(remote, pushRefSpec: $"refs/tags/{tag}", Push.Options);
+        repo.Network.Push(remote, pushRefSpec: $"+refs/tags/{tag}", Push.Options);
     }
 }

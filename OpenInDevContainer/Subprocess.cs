@@ -26,8 +26,11 @@ static class Subprocess
             FileName = fileName,
             RedirectStandardOutput = captureOutput,
             UseShellExecute = shell,
-            CreateNoWindow = true,
         };
+        if (shell)
+        {
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        }
         foreach (var arg in arguments)
         {
             startInfo.ArgumentList.Add(arg);

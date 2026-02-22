@@ -1,10 +1,14 @@
 using Cake.Common.Diagnostics;
 using Cake.Common.IO;
+using Cake.Common.Tools.Command;
 using Cake.Common.Tools.DotNet;
+using Cake.Core;
+using Cake.Core.IO;
 using Cake.Frosting;
 using Microsoft.Build.Construction;
 using NuGet.Versioning;
 using Git = LibGit2Sharp;
+using Path = System.IO.Path;
 
 namespace Automation;
 
@@ -59,7 +63,7 @@ public class Unlist : FrostingTask<Context>
         string[] tags = [.. repo.Tags.Select(t => t.FriendlyName)];
         string tag = tags.OrderByDescending(SemanticVersion.Parse).First();
 
-        string projectFilePath = Path.Combine(Context.ProjectRoot, "OpenInDevContainer/OpenInDevContainer.csproj");
+        string projectFilePath = Context.OpenInDevContainerProjectFilePath;
         var project = ProjectRootElement.Open(projectFilePath);
         var runtimeIdentifiers = project
             .PropertyGroups.SelectMany(g => g.Properties)
@@ -95,5 +99,98 @@ public class Unlist : FrostingTask<Context>
                 }
             );
         }
+    }
+}
+
+public class PublishDocker : FrostingTask<Context>
+{
+    public const string CR_REGISTRY = nameof(CR_REGISTRY);
+    public const string CR_IMAGE_NAME = nameof(CR_IMAGE_NAME);
+    public const string CR_VERSION = nameof(CR_VERSION);
+    public const string CR_PAT = nameof(CR_PAT);
+
+    private static void EnableBuildx(Context context)
+    {
+        string builderName = "oid";
+        bool create = false;
+        try
+        {
+            context.Command(["docker"], arguments: ProcessArgumentBuilder.FromStrings(["buildx", "use", builderName]));
+        }
+        catch (Exception)
+        {
+            create = true;
+        }
+        if (create)
+        {
+            context.Command(
+                ["docker"],
+                arguments: ProcessArgumentBuilder.FromStrings([
+                    "buildx",
+                    "create",
+                    "--name",
+                    builderName,
+                    "--use",
+                    "--bootstrap",
+                    "--driver-opt",
+                    "network=host",
+                ])
+            );
+        }
+    }
+
+    public override void Run(Context context)
+    {
+        string registry = Environment.GetEnvironmentVariable(CR_REGISTRY) ?? "ghcr.io";
+        string imageName =
+            Environment.GetEnvironmentVariable(CR_IMAGE_NAME)
+            ?? throw new InvalidOperationException($"{CR_IMAGE_NAME} is not set.");
+        string version =
+            Environment.GetEnvironmentVariable(CR_VERSION)
+            ?? throw new InvalidOperationException($"{CR_VERSION} is not set.");
+        string token =
+            Environment.GetEnvironmentVariable(CR_PAT) ?? throw new InvalidOperationException($"{CR_PAT} is not set.");
+
+        context.Information($"Logging in to {registry}...");
+        context.Command(
+            ["docker"],
+            new ProcessArgumentBuilder()
+                .Append("login")
+                .Append(registry)
+                .AppendSwitch("--username", "USERNAME")
+                .AppendSwitchQuotedSecret("--password", token)
+        );
+
+        string[] platforms =
+        [
+            "darwin/amd64",
+            "darwin/arm64",
+            "linux/amd64",
+            "linux/arm64",
+            "windows/amd64",
+            "windows/arm64",
+        ];
+
+        string[] tags = [$@"{registry}/{imageName}:{version}", $@"{registry}/{imageName}:latest"];
+
+        context.Information("Building and pushing multi-arch image...");
+        EnableBuildx(context);
+        context.Command(
+            ["docker"],
+            ProcessArgumentBuilder.FromStrings([
+                "buildx",
+                "build",
+                "--file",
+                Path.Combine(Context.ProjectRoot, "Docker/Dockerfile"),
+                "--platform",
+                string.Join(',', platforms),
+                "--tag",
+                tags[0],
+                "--tag",
+                tags[1],
+                "--push",
+                Context.ProjectRoot,
+            ])
+        );
     }
 }
