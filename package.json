@@ -10,6 +10,7 @@
     "pack-rid": "pnpm run cake PackRid",
     "publish": "pnpm run cake Publish",
     "push": "pnpm run cake Push",
+    "push-tag": "pnpm run cake PushTag",
     "restore": "pnpm run cake Restore"
   },
   "dependencies": {
