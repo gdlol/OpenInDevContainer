@@ -36,7 +36,7 @@ public class Pack : AsyncFrostingTask<Context>
                 ["Authors"] = [authors],
                 ["PackageReadmeFile"] = ["ReadMe.md"],
                 ["PackageDescription"] = ["Open folder in dev container."],
-                ["PackageLicenseExpression"] = ["LGPL-3.0-only"],
+                ["PackageLicenseExpression"] = ["LGPL-2.1-only"],
                 ["PackageRequireLicenseAcceptance"] = ["true"],
                 ["PackageTags"] = ["open folder devcontainer vscode"],
             },
