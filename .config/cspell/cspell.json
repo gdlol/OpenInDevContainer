@@ -4,5 +4,14 @@
   "useGitignore": true,
   "gitignoreRoot": ".",
   "ignorePaths": ["LICENSE"],
-  "words": ["devcontainer", "devcontainers", "packagejson", "csharpierignore", "csharpierrc", "globalconfig", "msbuild"]
+  "words": [
+    "csharpierignore",
+    "csharpierrc",
+    "devcontainer",
+    "devcontainers",
+    "globalconfig",
+    "msbuild",
+    "packagejson",
+    "Unlist"
+  ]
 }

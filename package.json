@@ -11,7 +11,8 @@
     "publish": "pnpm run cake Publish",
     "push": "pnpm run cake Push",
     "push-tag": "pnpm run cake PushTag",
-    "restore": "pnpm run cake Restore"
+    "restore": "pnpm run cake Restore",
+    "unlist": "pnpm run cake Unlist"
   },
   "dependencies": {
     "@prettier/plugin-xml": "^3.4.2",
