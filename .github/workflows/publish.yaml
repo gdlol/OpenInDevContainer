@@ -6,10 +6,9 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
       - "[0-9]+.[0-9]+.[0-9]+-*"
   workflow_dispatch:
-  pull_request:
 
 env:
-  REPOSITORY_NAME: open-in-devcontainer
+  DEVCONTAINER_IMAGE: ghcr.io/${{ github.repository_owner }}/open-in-devcontainer/devcontainer
   AUTHORS: ${{ github.repository_owner }}
 
 jobs:
@@ -24,8 +23,8 @@ jobs:
       - name: Pack common
         uses: devcontainers/ci@v0.3
         with:
-          imageName: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
-          cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
+          imageName: ${{ env.DEVCONTAINER_IMAGE }}
+          cacheFrom: ${{ env.DEVCONTAINER_IMAGE }}
           push: never
           runCmd: pnpm run pack
           env: |
@@ -91,10 +90,8 @@ jobs:
 
       - name: Push packages
         uses: devcontainers/ci@v0.3
-        # env:
-        #   NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         with:
-          imageName: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
-          cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
-          push: never
+          cacheFrom: ${{ env.DEVCONTAINER_IMAGE }}
           runCmd: pnpm run publish

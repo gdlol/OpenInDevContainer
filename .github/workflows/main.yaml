@@ -36,12 +36,10 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
-          push: never
           runCmd: pnpm lint
 
       - name: Build
         uses: devcontainers/ci@v0.3
         with:
           cacheFrom: ghcr.io/${{ github.repository_owner }}/${{ env.REPOSITORY_NAME }}/devcontainer
-          push: never
           runCmd: pnpm build
