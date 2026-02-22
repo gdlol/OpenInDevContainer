@@ -1,7 +1,7 @@
 ﻿using System.CommandLine;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 
 static async Task<string> TryConvertWslPath(string path)
 {
@@ -15,23 +15,50 @@ static async Task<string> TryConvertWslPath(string path)
     return wslPath.Trim();
 }
 
-static string ToKebabCase(string name)
+static async ValueTask<string?> TryGetDevContainerConfig(string workspacePath, CancellationToken cancellationToken)
 {
-    name = KebabCaseBoundary.Spaces().Replace(name, "$1-$3");
-    name = KebabCaseBoundary.Underscore().Replace(name, "$1-$3");
-    name = KebabCaseBoundary.Dot().Replace(name, "$1-$3");
-    name = KebabCaseBoundary.LowerUpper().Replace(name, "$1-$2");
-    name = KebabCaseBoundary.Acronym().Replace(name, "$1-$2");
-    return name.ToLowerInvariant();
+    string[] candidatePaths =
+    [
+        // Path.Combine(workspacePath, ".config/devcontainer/.devcontainer.json"),
+        Path.Combine(workspacePath, ".devcontainer/devcontainer.json"),
+        Path.Combine(workspacePath, ".devcontainer.json"),
+    ];
+    foreach (string candidatePath in candidatePaths)
+    {
+        if (File.Exists(candidatePath))
+        {
+            return await File.ReadAllTextAsync(candidatePath, cancellationToken);
+        }
+    }
+    return null;
 }
 
-static async Task GetCommand(string path, string workspaceName, bool debug)
+static string? TryGetWorkspaceFolder(string devcontainerConfig)
 {
-    string hexPath = Convert.ToHexStringLower(Encoding.UTF8.GetBytes(path));
-    string folderUri = $"vscode-remote://dev-container+{hexPath}/workspaces/{workspaceName}";
+    var config = JsonDocument
+        .Parse(
+            devcontainerConfig,
+            new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }
+        )
+        .RootElement;
+    if (config.TryGetProperty("workspaceFolder", out JsonElement workspaceFolder))
+    {
+        return workspaceFolder.GetString();
+    }
+    return null;
+}
+
+static async Task GetCommand(string localWorkspaceFolder, string containerWorkspaceFolder, bool debug)
+{
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+    {
+        localWorkspaceFolder = await TryConvertWslPath(localWorkspaceFolder);
+    }
+    string hexPath = Convert.ToHexStringLower(Encoding.UTF8.GetBytes(localWorkspaceFolder));
+    string folderUri = $"vscode-remote://dev-container+{hexPath}${containerWorkspaceFolder}";
     if (debug)
     {
-        Console.Error.WriteLine($"Path: {path}");
+        Console.Error.WriteLine($"Path: {localWorkspaceFolder}");
         Console.Error.WriteLine($"Folder URI: {folderUri}");
     }
     await Subprocess.Run("code", ["--folder-uri", folderUri], shell: true);
@@ -46,35 +73,31 @@ var rootCommand = new RootCommand("Open in Dev Container")
         var workspace = parseResult.GetRequiredValue(Arguments.Workspace);
         var debug = parseResult.GetValue(Options.Debug);
 
-        string workspacePath = workspace.FullName;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        string localWorkspaceFolder = workspace.FullName;
+
+        string? devcontainerConfig = await TryGetDevContainerConfig(localWorkspaceFolder, token);
+        if (devcontainerConfig is null)
         {
-            workspacePath = await TryConvertWslPath(workspacePath);
+            Console.Error.WriteLine($"devcontainer config not found in {localWorkspaceFolder}");
+            return 1;
+        }
+        string? containerWorkspaceFolder = TryGetWorkspaceFolder(devcontainerConfig);
+        if (containerWorkspaceFolder is null)
+        {
+            Console.Error.WriteLine($"workspaceFolder not found in devcontainer config");
+            return 1;
+        }
+        if (containerWorkspaceFolder.Contains("${"))
+        {
+            Console.Error.WriteLine(
+                $"Variable substitution in workspaceFolder is not supported: {containerWorkspaceFolder}"
+            );
+            return 1;
         }
 
-        string workspaceName = workspace.Name;
-        workspaceName = ToKebabCase(workspaceName);
-
-        await GetCommand(workspacePath, workspaceName, debug);
+        await GetCommand(localWorkspaceFolder, containerWorkspaceFolder, debug);
+        return 0;
     },
 };
 
 await rootCommand.Parse(args).InvokeAsync();
-
-internal partial class KebabCaseBoundary
-{
-    [GeneratedRegex(@"(\S)(\s+)(\S)")]
-    public static partial Regex Spaces();
-
-    [GeneratedRegex(@"(\S)(_)(\S)")]
-    public static partial Regex Underscore();
-
-    [GeneratedRegex(@"(\S)(\.)(\S)")]
-    public static partial Regex Dot();
-
-    [GeneratedRegex(@"(\p{Ll})(\p{Lu})")]
-    public static partial Regex LowerUpper();
-
-    [GeneratedRegex(@"(\p{Lu}|\p{N})(\p{Lu}\p{Ll})")]
-    public static partial Regex Acronym();
-}

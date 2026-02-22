@@ -4,7 +4,7 @@ static class CommandExtensions
 {
     extension(Command command)
     {
-        public Func<ParseResult, CancellationToken, Task> CommandAction
+        public Func<ParseResult, CancellationToken, Task<int>> CommandAction
         {
             set => command.SetAction(value);
         }
