@@ -95,3 +95,5 @@ jobs:
         with:
           cacheFrom: ${{ env.DEVCONTAINER_IMAGE }}
           runCmd: pnpm run publish
+          env: |
+            NUGET_API_KEY
