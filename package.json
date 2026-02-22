@@ -6,7 +6,8 @@
     "cake": "dotnet run --project Automation --target",
     "format": "pnpm run cake Format",
     "lint": "pnpm run cake Lint",
-    "pack-linux": "pnpm run cake PackLinux",
+    "pack": "pnpm run cake Pack",
+    "pack-rid": "pnpm run cake PackRid",
     "publish": "pnpm run cake Publish",
     "restore": "pnpm run cake Restore"
   },

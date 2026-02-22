@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 using Cake.Common.IO;
 using Cake.Common.Tools.Command;
@@ -11,7 +12,7 @@ using Path = System.IO.Path;
 
 namespace Automation;
 
-public static class Pack
+public class Pack : AsyncFrostingTask<Context>
 {
     public static async Task RunAsync(Context context, string? runtimeIdentifier = null)
     {
@@ -50,14 +51,10 @@ public static class Pack
             new() { MSBuildSettings = msbuildSettings }
         );
     }
-}
 
-public class PackLinux : AsyncFrostingTask<Context>
-{
     private static void UpdatePackageNames()
     {
-        var packages = Directory.EnumerateFiles(Context.PackageOutputPath, "oid*.nupkg").ToList();
-        var mainPackage = packages.Single(f => !Path.GetFileName(f).Contains("-rid."));
+        var mainPackage = Directory.EnumerateFiles(Context.PackageOutputPath, "oid.*.nupkg").Single();
 
         // Locate DotnetToolSettings.xml
         using var reader = new PackageArchiveReader(mainPackage);
@@ -90,9 +87,46 @@ public class PackLinux : AsyncFrostingTask<Context>
     {
         context.CleanDirectory(Context.PackageOutputPath);
 
-        await Pack.RunAsync(context, "linux-x64");
-        await Pack.RunAsync(context, "any");
-        await Pack.RunAsync(context);
+        await RunAsync(context, "any");
+        await RunAsync(context);
         UpdatePackageNames();
+    }
+}
+
+public class PackRid : AsyncFrostingTask<Context>
+{
+    public override async Task RunAsync(Context context)
+    {
+        context.CleanDirectory(Context.PackageOutputPath);
+
+        var osPlatform =
+            RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? nameof(OSPlatform.Linux)
+            : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? nameof(OSPlatform.OSX)
+            : RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? nameof(OSPlatform.Windows)
+            : throw new PlatformNotSupportedException(RuntimeInformation.OSDescription);
+
+        switch (osPlatform, RuntimeInformation.ProcessArchitecture)
+        {
+            case (nameof(OSPlatform.Linux), Architecture.Arm64):
+                await Pack.RunAsync(context, "linux-arm64");
+                break;
+            case (nameof(OSPlatform.Linux), Architecture.X64):
+                await Pack.RunAsync(context, "linux-x64");
+                break;
+            case (nameof(OSPlatform.OSX), Architecture.Arm64):
+                await Pack.RunAsync(context, "osx-arm64");
+                break;
+            case (nameof(OSPlatform.OSX), Architecture.X64):
+                await Pack.RunAsync(context, "osx-x64");
+                break;
+            case (nameof(OSPlatform.Windows), Architecture.Arm64):
+                await Pack.RunAsync(context, "win-arm64");
+                break;
+            case (nameof(OSPlatform.Windows), Architecture.X64):
+                await Pack.RunAsync(context, "win-x64");
+                break;
+            default:
+                throw new PlatformNotSupportedException($"{osPlatform}-{RuntimeInformation.ProcessArchitecture}");
+        }
     }
 }
