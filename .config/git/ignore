@@ -4,5 +4,7 @@ _*
 !**/.devcontainer/**
 !.config/
 !**/.config/**
+!.github/
+!.github/**
 
 node_modules/
