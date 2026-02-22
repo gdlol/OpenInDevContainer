@@ -1,5 +1,8 @@
 <Project>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import
+    Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"
+    Condition="$(IS_DEVCONTAINER) == 'true'"
+  />
 
   <PropertyGroup>
     <ProjectRoot>$(MSBuildThisFileDirectory)</ProjectRoot>
