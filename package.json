@@ -9,6 +9,7 @@
     "pack": "pnpm run cake Pack",
     "pack-rid": "pnpm run cake PackRid",
     "publish": "pnpm run cake Publish",
+    "publish-docker": "pnpm run cake PublishDocker",
     "push": "pnpm run cake Push",
     "push-tag": "pnpm run cake PushTag",
     "restore": "pnpm run cake Restore",

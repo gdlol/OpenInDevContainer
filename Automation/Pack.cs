@@ -14,6 +14,18 @@ namespace Automation;
 
 public class Pack : AsyncFrostingTask<Context>
 {
+    private static string? RidToDockerPlatform(string? runtimeIdentifier) =>
+        runtimeIdentifier switch
+        {
+            "linux-x64" => "linux/amd64",
+            "linux-arm64" => "linux/arm64",
+            "osx-x64" => "darwin/amd64",
+            "osx-arm64" => "darwin/arm64",
+            "win-x64" => "windows/amd64",
+            "win-arm64" => "windows/arm64",
+            _ => null,
+        };
+
     public static async Task RunAsync(Context context, string? runtimeIdentifier = null)
     {
         string? authors = Environment.GetEnvironmentVariable("AUTHORS");
@@ -46,10 +58,25 @@ public class Pack : AsyncFrostingTask<Context>
             msbuildSettings.Properties["PackageId"] = ["oid-rid"];
             msbuildSettings.Properties["RuntimeIdentifier"] = [runtimeIdentifier];
         }
-        context.DotNetPack(
-            Path.Combine(Context.ProjectRoot, "OpenInDevContainer"),
-            new() { MSBuildSettings = msbuildSettings }
-        );
+        context.DotNetPack(Context.OpenInDevContainerProjectPath, new() { MSBuildSettings = msbuildSettings });
+
+        string? dockerPlatform = RidToDockerPlatform(runtimeIdentifier);
+        if (dockerPlatform is not null)
+        {
+            var outputPath = Path.Combine(Context.BinariesOutputPath, dockerPlatform);
+            context.CreateDirectory(outputPath);
+            context.DotNetPublish(
+                Context.OpenInDevContainerProjectPath,
+                new()
+                {
+                    OutputDirectory = outputPath,
+                    MSBuildSettings = new()
+                    {
+                        Properties = { ["PublishAot"] = ["true"], ["RuntimeIdentifier"] = [runtimeIdentifier] },
+                    },
+                }
+            );
+        }
     }
 
     private static void UpdatePackageNames()

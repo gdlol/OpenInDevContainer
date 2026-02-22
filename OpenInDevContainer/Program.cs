@@ -34,7 +34,7 @@ static async Task GetCommand(string path, string workspaceName, bool debug)
         Console.Error.WriteLine($"Path: {path}");
         Console.Error.WriteLine($"Folder URI: {folderUri}");
     }
-    await Subprocess.Run("code", ["--folder-uri", folderUri]);
+    await Subprocess.Run("code", ["--folder-uri", folderUri], shell: true);
 }
 
 var rootCommand = new RootCommand("Open in Dev Container")
@@ -54,7 +54,6 @@ var rootCommand = new RootCommand("Open in Dev Container")
 
         string workspaceName = workspace.Name;
         workspaceName = ToKebabCase(workspaceName);
-        await Subprocess.Run("mkdir", ["/root/test"], cancellationToken: token);
 
         await GetCommand(workspacePath, workspaceName, debug);
     },

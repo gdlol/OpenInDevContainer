@@ -15,4 +15,13 @@ public class Context(ICakeContext context) : FrostingContext(context)
     public static string PackageOutputPath => Path.Combine(ProjectRoot, ".local", "Packages");
 
     public static string PackagePushPath => Path.Combine(ProjectRoot, ".local", "Nuget");
+
+    public static string BinariesOutputPath => Path.Combine(ProjectRoot, ".local", "bin", "docker");
+
+    public const string OpenInDevContainer = nameof(OpenInDevContainer);
+
+    public static string OpenInDevContainerProjectPath => Path.Combine(ProjectRoot, OpenInDevContainer);
+
+    public static string OpenInDevContainerProjectFilePath =>
+        Path.Combine(OpenInDevContainerProjectPath, "OpenInDevContainer.csproj");
 }

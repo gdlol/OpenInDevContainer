@@ -5,10 +5,12 @@
   "gitignoreRoot": ".",
   "ignorePaths": ["LICENSE"],
   "words": [
+    "buildx",
     "csharpierignore",
     "csharpierrc",
     "devcontainer",
     "devcontainers",
+    "distroless",
     "globalconfig",
     "msbuild",
     "packagejson",
