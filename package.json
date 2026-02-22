@@ -9,6 +9,7 @@
     "pack": "pnpm run cake Pack",
     "pack-rid": "pnpm run cake PackRid",
     "publish": "pnpm run cake Publish",
+    "push": "pnpm run cake Push",
     "restore": "pnpm run cake Restore"
   },
   "dependencies": {

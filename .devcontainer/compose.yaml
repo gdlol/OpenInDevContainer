@@ -6,3 +6,5 @@ services:
     init: true
     env_file:
       - container.env
+      - path: ../.local/.env
+        required: false

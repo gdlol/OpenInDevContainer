@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Cake.Frosting" />
+    <PackageReference Include="LibGit2Sharp" />
     <PackageReference Include="NuGet.Packaging" />
   </ItemGroup>
 </Project>
